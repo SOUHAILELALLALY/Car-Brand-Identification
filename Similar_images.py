@@ -16,7 +16,7 @@ model.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
-print("✅ Feature Extraction Model Loaded!")
+
 def extract_features(image_path, model):
     transform = transforms.Compose([
         transforms.Resize((300, 300)),  
@@ -60,7 +60,7 @@ feature_matrix = np.array(list(feature_dict.values()))
 np.save("//dataset//files//car_features.npy", feature_matrix)
 np.save("//dataset//files//car_image_paths.npy", image_paths)
 
-print("✅ Feature Extraction Complete & Saved!")
+
 
 
 
@@ -70,7 +70,7 @@ image_paths = np.load("//dataset//files//car_image_paths.npy")
 
 nbrs = NearestNeighbors(n_neighbors=5, algorithm='auto').fit(feature_matrix)
 
-print("✅ Nearest Neighbors Model Built!")
+
 
 
 def find_similar_cars(query_image_path, model, nbrs, image_paths, top_k=5):
