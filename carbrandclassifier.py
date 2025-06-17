@@ -90,7 +90,7 @@ for epoch in range(num_epochs):
     if avg_loss < best_loss:
         best_loss = avg_loss
         torch.save(model.state_dict(), best_model_path)
-        print(f"✅ Best model saved with loss {best_loss:.4f}")
+        print(f"Best model saved with loss {best_loss:.4f}")
 
 model.load_state_dict(torch.load("/content/drive/MyDrive/train/best_car_brand_classifier.pth"))
 model.eval()
