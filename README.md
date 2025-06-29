@@ -3,7 +3,9 @@
 This project is a Streamlit web app that allows you to:
 
 ✅ Classify the brand of a car from an uploaded image using a custom-trained ResNet50 deep learning model.
+
 ✅ Find visually similar cars using image feature extraction + nearest neighbors search.
+
 ✅ Get quick information about the car brand (history, best models, and price range) powered by Google Gemini LLM (via LangChain).
 
 It combines PyTorch, FAISS-style similarity search, Streamlit, and Google Generative AI to deliver an interactive AI experience.
