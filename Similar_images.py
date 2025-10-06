@@ -1,44 +1,45 @@
 import torch
-import torchvision.models as models
-import torch.nn as nn
-import torchvision.transforms as transforms
-from PIL import Image
-import os
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
+import os
+from PIL import Image
+import faiss
+import matplotlib.pyplot as plt
+from transformers import CLIPProcessor, CLIPModel
 
+# =====================================
+# 🔹 1. Load CLIP Model & Processor
+# =====================================
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
-model = models.resnet50(pretrained=True)
-model.fc = nn.Identity()  
+model_name = "openai/clip-vit-base-patch32"
+model = CLIPModel.from_pretrained(model_name).to(device)
+processor = CLIPProcessor.from_pretrained(model_name)
+
 model.eval()
+print("✅ Hugging Face CLIP Model Loaded for Feature Extraction!")
 
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
-
-
-def extract_features(image_path, model):
-    transform = transforms.Compose([
-        transforms.Resize((300, 300)),  
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-    ])
-
+# =====================================
+# 🔹 2. Feature Extraction Function
+# =====================================
+def extract_features(image_path, model, processor):
+    
     image = Image.open(image_path).convert("RGB")
-    image = transform(image).unsqueeze(0).to(device)
+    inputs = processor(images=image, return_tensors="pt").to(device)
 
-    model.eval()
     with torch.no_grad():
-        features = model(image)
+        image_features = model.get_image_features(**inputs)
+        image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
 
-    return features.cpu().numpy().flatten() 
+    return image_features.cpu().numpy().flatten()
 
+# =====================================
+# 🔹 3. Extract Features for Dataset
+# =====================================
 
-
-dataset_path = "//dataset//train"
+dataset_path = "train"  # Folder containing car brand folders
 feature_dict = {}
 
-for brand in os.listdir(dataset_path):  
+for brand in os.listdir(dataset_path):
     brand_folder = os.path.join(dataset_path, brand)
 
     if os.path.isdir(brand_folder):
@@ -46,76 +47,73 @@ for brand in os.listdir(dataset_path):
             image_path = os.path.join(brand_folder, image_name)
 
             try:
-                features = extract_features(image_path, model)
-                feature_dict[image_path] = features  
-                print(f"Extracted features for {image_name}")
+                features = extract_features(image_path, model, processor)
+                feature_dict[image_path] = features
+                print(f"✅ Extracted features for {image_name}")
             except Exception as e:
                 print(f"❌ Error processing {image_name}: {e}")
 
-
+# Convert to arrays
 image_paths = list(feature_dict.keys())
-feature_matrix = np.array(list(feature_dict.values()))
+feature_matrix = np.array(list(feature_dict.values())).astype("float32")
 
+# Save features for reuse
+np.save("car_features_clip_hf.npy", feature_matrix)
+np.save("car_image_paths_clip_hf.npy", image_paths)
 
-np.save("//dataset//files//car_features.npy", feature_matrix)
-np.save("//dataset//files//car_image_paths.npy", image_paths)
+print("✅ CLIP (Hugging Face) Feature Extraction Complete & Saved!")
 
+# =====================================
+# 🔹 4. Build FAISS Index
+# =====================================
+feature_matrix = np.load("car_features_clip_hf.npy")
+image_paths = np.load("car_image_paths_clip_hf.npy", allow_pickle=True)
 
+# Using cosine similarity -> inner product index
+index = faiss.IndexFlatIP(feature_matrix.shape[1])
+index.add(feature_matrix)
+print("✅ FAISS Index Built!")
 
+# =====================================
+# 🔹 5. Find Similar Cars
+# =====================================
+def find_similar_cars(query_image_path, model, processor, index, image_paths, top_k=5):
+    query_features = extract_features(query_image_path, model, processor)
+    query_features = np.expand_dims(query_features.astype("float32"), axis=0)
 
-
-
-feature_matrix = np.load("//dataset//files//car_features.npy")
-image_paths = np.load("//dataset//files//car_image_paths.npy")
-
-nbrs = NearestNeighbors(n_neighbors=5, algorithm='auto').fit(feature_matrix)
-
-
-
-
-def find_similar_cars(query_image_path, model, nbrs, image_paths, top_k=5):
-    query_features = extract_features(query_image_path, model).reshape(1, -1) 
-    distances, indices = nbrs.kneighbors(query_features, top_k)
-
-
+    # Perform nearest neighbor search
+    similarities, indices = index.search(query_features, top_k)
     similar_images = [image_paths[i] for i in indices[0]]
 
     return similar_images
 
-
-
-
-import matplotlib.pyplot as plt
-from PIL import Image
-
+# =====================================
+# 🔹 6. Visualization
+# =====================================
 def visualize_similar_cars(query_image_path, similar_images):
-    """
-    Displays the query image and the top 5 similar images in a grid.
-    """
     plt.figure(figsize=(12, 6))
 
-    
+    # Show query image
     query_image = Image.open(query_image_path).convert("RGB")
-    plt.subplot(1, 6, 1)  
+    plt.subplot(1, 6, 1)
     plt.imshow(query_image)
     plt.axis("off")
-    plt.title("Query Image")
+    plt.title("Query")
 
-    
+    # Show top 5 similar images
     for i, img_path in enumerate(similar_images):
         similar_image = Image.open(img_path).convert("RGB")
-        plt.subplot(1, 6, i + 2)  
+        plt.subplot(1, 6, i + 2)
         plt.imshow(similar_image)
         plt.axis("off")
         plt.title(f"Similar {i+1}")
 
     plt.show()
-# Example: Test image path
-query_image = "//dataset1//test//Audi//564.jpg"  
 
+# =====================================
+# 🔹 7. Example Usage
+# =====================================
+query_image = "image.jpg"
 
-similar_cars = find_similar_cars(query_image, model, nbrs, image_paths, top_k=5)
-
-
-
+similar_cars = find_similar_cars(query_image, model, processor, index, image_paths, top_k=5)
 visualize_similar_cars(query_image, similar_cars)
