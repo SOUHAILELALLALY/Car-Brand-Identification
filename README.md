@@ -18,7 +18,7 @@ This project is a Streamlit-powered web application that provides:
 1. Car Brand Classification
 2. Multimodal LLM Understanding
 
-        Uses Gemini 2.0 Flash (via LangChain)
+        Uses Gemini (via LangChain)
         
         Accepts both image + text
         
