@@ -167,7 +167,7 @@ def cached_car_info(file_bytes, original_filename):
 
 
 # ---------------- Streamlit UI ----------------
-st.title("🚗 Car Brand Classification & Similarity Search")
+st.title("Car Brand Classification & Similarity Search")
 
 uploaded_file = st.file_uploader("Upload a car image", type=["jpg", "png", "jpeg"])
 
@@ -179,10 +179,10 @@ if uploaded_file:
     predicted_class = predict_car_brand(image, classification_model)
     brand_names = ['Audi', 'Hyundai Creta', 'Mahindra Scorpio', 'Rolls Royce', 'Swift', 'Tata Safari', 'Toyota Innova']
     predicted_brand = brand_names[predicted_class]
-    st.success(f"Predicted Car Brand: **{predicted_brand}** 🚘")
+    st.success(f"Predicted Car Brand: **{predicted_brand}**")
 
     # Image similarity search
-    st.subheader("🔍 Similar Cars (Image Search)")
+    st.subheader("Similar Cars (Image Search)")
     similar_images = find_similar_cars(image, index, image_paths)
     cols = st.columns(5)
     for col, img_path in zip(cols, similar_images):
@@ -190,7 +190,7 @@ if uploaded_file:
             st.image(Image.open(img_path), width=100)
 
     # Car details from LLM
-    st.subheader("📖 More Information")
+    st.subheader("More Information")
     uploaded_file.seek(0)
     file_bytes = uploaded_file.read()
     car_info = cached_car_info(file_bytes, uploaded_file.name)
@@ -204,7 +204,7 @@ if uploaded_file:
 
 
 
-st.subheader("🔎 Search Cars by Text Description")
+st.subheader("Search Cars by Text Description")
 
 text_query = st.text_input(
     "Describe a car (e.g., 'red sporty SUV', 'luxury sedan', 'classic vintage car')"
@@ -218,5 +218,6 @@ if text_query:
     for col, img_path in zip(cols, text_results):
         with col:
             st.image(Image.open(img_path), width=100)
+
 
 
