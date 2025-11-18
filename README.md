@@ -24,13 +24,13 @@ This project is a Streamlit-powered web application that provides:
         
         Provides:
         
-        brand & model prediction
+        - brand & model prediction
         
-        approximate pricing
+        - approximate pricing
         
-        pros/cons
+        - pros/cons
         
-        similar car suggestions
+        - similar car suggestions
 3. Image-Based Similarity Search
 
         Extracts CLIP embeddings
