@@ -92,7 +92,7 @@ def extract_features(image):
     return image_features.cpu().numpy().flatten()
 
 
-# ✨ NEW — text embedding
+
 def extract_text_features(text: str):
     inputs = CLIP_processor(text=[text], return_tensors="pt", padding=True)
     inputs = {k: v.to(device) for k, v in inputs.items()}
@@ -203,7 +203,7 @@ if uploaded_file:
         st.info(answer)
 
 
-# ✨ NEW — TEXT QUERY SEARCH SECTION
+
 st.subheader("🔎 Search Cars by Text Description")
 
 text_query = st.text_input(
@@ -218,3 +218,4 @@ if text_query:
     for col, img_path in zip(cols, text_results):
         with col:
             st.image(Image.open(img_path), width=100)
+
