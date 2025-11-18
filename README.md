@@ -1,32 +1,59 @@
-# Car-Brand-Identification
+# Car Brand Classification & Multimodal Search App
 
-This project is a Streamlit web app that allows you to:
+This project is a Streamlit-powered web application that provides:
 
-✅ Classify the brand of a car from an uploaded image using a custom-trained ResNet50 deep learning model.
+        Car brand classification
+        
+        Image similarity search
+        
+        Text-to-image car search
+        
+        Multimodal car analysis
+        
+        Interactive Q&A about cars
+        
+        It enables users to upload a car image, identify the brand, view similar cars, get AI-generated insights, and even search cars using natural-language descriptions.
 
-✅ Find visually similar cars using image feature extraction + nearest neighbors search.
+## Features
+1. Car Brand Classification
+2. Multimodal LLM Understanding
 
-✅ Get quick information about the car brand (history, best models, and price range) powered by Google Gemini LLM (via LangChain).
+        Uses Gemini 2.0 Flash (via LangChain)
+        
+        Accepts both image + text
+        
+        Provides:
+        
+        brand & model prediction
+        
+        approximate pricing
+        
+        pros/cons
+        
+        similar car suggestions
+3. Image-Based Similarity Search
 
-It combines PyTorch, FAISS-style similarity search, Streamlit, and Google Generative AI to deliver an interactive AI experience.
-✨ Features
+        Extracts CLIP embeddings
+        
+        Uses FAISS L2 index for fast similarity matching
+        
+        Returns top-K visually similar cars
+4. Text-Based Car Retrieval
 
-    🖼 Upload a car image and predict if it’s an Audi, Rolls Royce, or Toyota Innova.
+        Describe a car 
+        
+        Retrieves visually matching cars using CLIP text embeddings
+5. Car Q&A
 
-    🔍 Find top-5 visually similar cars from your dataset.
+        Ask any question related to cars, and the LLM gives a short answer.
 
-    📚 Get AI-generated summaries about the predicted car brand, best models, and price ranges.
-
-    ⚡ Fast, lightweight Streamlit interface.
-
-🛠 Tech Stack
-
-    Python, Streamlit
-
-    PyTorch for deep learning classification & feature extraction
-
-    Scikit-learn NearestNeighbors for similarity search
-
-    LangChain + Google Gemini (via langchain_google_genai and google.generativeai) for natural language responses
-
-    dotenv for managing API keys
+## Requirements
+        streamlit
+        torch
+        torchvision
+        transformers
+        faiss-cpu
+        numpy
+        Pillow
+        langchain
+        google-generativeai
