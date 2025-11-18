@@ -2,17 +2,17 @@
 
 This project is a Streamlit-powered web application that provides:
 
-        Car brand classification
-        
-        Image similarity search
-        
-        Text-to-image car search
-        
-        Multimodal car analysis
-        
-        Interactive Q&A about cars
-        
-        It enables users to upload a car image, identify the brand, view similar cars, get AI-generated insights, and even search cars using natural-language descriptions.
+- Car brand classification
+
+- Image similarity search
+
+- Text-to-image car search
+
+- Multimodal car analysis
+
+- Interactive Q&A about cars
+
+- It enables users to upload a car image, identify the brand, view similar cars, get AI-generated insights, and even search cars using natural-language descriptions.
 
 ## Features
 1. Car Brand Classification
