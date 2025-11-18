@@ -41,7 +41,7 @@ def load_classification_model():
     model.fc = nn.Linear(2048, num_classes)
     model.load_state_dict(
         torch.load(
-            "C://Users//PC//Desktop//dataset//best_car_brand_classifier.pth",
+            "dataset//best_car_brand_classifier.pth",
             map_location=torch.device("cpu")
         )
     )
@@ -54,8 +54,8 @@ classification_model = load_classification_model()
 
 @st.cache_resource
 def load_faiss_index():
-    feature_matrix = np.load("C://Users//PC//Desktop//dataset//files2//car_features_clip_hf.npy")
-    image_paths = np.load("C://Users//PC//Desktop//dataset//files2//car_image_paths_clip_hf.npy")
+    feature_matrix = np.load("dataset//files2//car_features_clip_hf.npy")
+    image_paths = np.load("dataset//files2//car_image_paths_clip_hf.npy")
     index = faiss.IndexFlatL2(feature_matrix.shape[1])
     index.add(feature_matrix)
     return index, image_paths
@@ -218,4 +218,5 @@ if text_query:
     for col, img_path in zip(cols, text_results):
         with col:
             st.image(Image.open(img_path), width=100)
+
 
