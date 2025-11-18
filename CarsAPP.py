@@ -12,6 +12,7 @@ from langchain.schema import HumanMessage
 from langchain.chat_models import init_chat_model
 import base64
 
+
 # ---------------- Environment ----------------
 os.environ["GOOGLE_API_KEY"] = "API_KEY"
 
@@ -36,11 +37,11 @@ def ask_question(question):
 @st.cache_resource
 def load_classification_model():
     model = models.resnet50(pretrained=False)
-    num_classes = 7  # Adjust to your dataset
+    num_classes = 7
     model.fc = nn.Linear(2048, num_classes)
     model.load_state_dict(
         torch.load(
-            "best_car_brand_classifier.pth",
+            "C://Users//PC//Desktop//dataset//best_car_brand_classifier.pth",
             map_location=torch.device("cpu")
         )
     )
@@ -53,8 +54,8 @@ classification_model = load_classification_model()
 
 @st.cache_resource
 def load_faiss_index():
-    feature_matrix = np.load("car_features_clip_hf.npy")
-    image_paths = np.load("car_image_paths_clip_hf.npy")
+    feature_matrix = np.load("C://Users//PC//Desktop//dataset//files2//car_features_clip_hf.npy")
+    image_paths = np.load("C://Users//PC//Desktop//dataset//files2//car_image_paths_clip_hf.npy")
     index = faiss.IndexFlatL2(feature_matrix.shape[1])
     index.add(feature_matrix)
     return index, image_paths
@@ -82,13 +83,23 @@ def predict_car_brand(image, model):
 
 
 def extract_features(image):
-    """Extract CLIP image embeddings using Hugging Face."""
+    """Extract CLIP image embeddings."""
     inputs = CLIP_processor(images=image, return_tensors="pt")
     inputs = {k: v.to(device) for k, v in inputs.items()}
     with torch.no_grad():
         image_features = CLIP_model.get_image_features(**inputs)
         image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
     return image_features.cpu().numpy().flatten()
+
+
+# ✨ NEW — text embedding
+def extract_text_features(text: str):
+    inputs = CLIP_processor(text=[text], return_tensors="pt", padding=True)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    with torch.no_grad():
+        text_features = CLIP_model.get_text_features(**inputs)
+        text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
+    return text_features.cpu().numpy().flatten()
 
 
 def find_similar_cars(image, index, image_paths, top_k=5):
@@ -99,21 +110,23 @@ def find_similar_cars(image, index, image_paths, top_k=5):
     return similar_images
 
 
+
+def search_cars_by_text(query_text, index, image_paths, top_k=5):
+    query_features = extract_text_features(query_text)
+    query_features = np.expand_dims(query_features, axis=0)
+    _, indices = index.search(query_features, top_k)
+    similar_images = [image_paths[i] for i in indices[0]]
+    return similar_images
+
+
 def encode_image_to_base64(uploaded_file):
-    # Read bytes safely
     uploaded_file.seek(0)
     image_bytes = uploaded_file.read()
-
-    # Validate image can be opened
     try:
         Image.open(uploaded_file).verify()
     except Exception:
         raise ValueError("Uploaded file is not a valid image")
-
-    # Encode
     encoded = base64.b64encode(image_bytes).decode("utf-8")
-
-    # Get MIME type
     file_ext = uploaded_file.name.split(".")[-1].lower()
     mime = f"image/{'jpeg' if file_ext in ['jpg', 'jpeg'] else file_ext}"
     return f"data:{mime};base64,{encoded}"
@@ -145,12 +158,11 @@ def ask_car_question(user_question):
     return answer
 
 
-# Cache the LLM result so it's only generated once per image
 @st.cache_data(show_spinner=False)
 def cached_car_info(file_bytes, original_filename):
     from io import BytesIO
     temp_file = BytesIO(file_bytes)
-    temp_file.name = original_filename  # ✅ add the missing attribute
+    temp_file.name = original_filename
     return get_car_brand_info(temp_file)
 
 
@@ -163,29 +175,46 @@ if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Uploaded Image", width=300)
 
-    # Predict car brand
+    # Brand classification
     predicted_class = predict_car_brand(image, classification_model)
     brand_names = ['Audi', 'Hyundai Creta', 'Mahindra Scorpio', 'Rolls Royce', 'Swift', 'Tata Safari', 'Toyota Innova']
     predicted_brand = brand_names[predicted_class]
     st.success(f"Predicted Car Brand: **{predicted_brand}** 🚘")
 
-    # Similar cars
-    st.subheader("🔍 Similar Cars")
+    # Image similarity search
+    st.subheader("🔍 Similar Cars (Image Search)")
     similar_images = find_similar_cars(image, index, image_paths)
     cols = st.columns(5)
     for col, img_path in zip(cols, similar_images):
         with col:
             st.image(Image.open(img_path), width=100)
 
-    # LLM information
+    # Car details from LLM
     st.subheader("📖 More Information")
-
     uploaded_file.seek(0)
     file_bytes = uploaded_file.read()
     car_info = cached_car_info(file_bytes, uploaded_file.name)
     st.info(car_info)
 
+    # Ask LLM anything
     user_question = st.text_input("Ask me anything about cars:")
     if user_question:
         answer = ask_car_question(user_question)
         st.info(answer)
+
+
+# ✨ NEW — TEXT QUERY SEARCH SECTION
+st.subheader("🔎 Search Cars by Text Description")
+
+text_query = st.text_input(
+    "Describe a car (e.g., 'red sporty SUV', 'luxury sedan', 'classic vintage car')"
+)
+
+if text_query:
+    st.write(f"Results for: **{text_query}**")
+    text_results = search_cars_by_text(text_query, index, image_paths)
+
+    cols = st.columns(5)
+    for col, img_path in zip(cols, text_results):
+        with col:
+            st.image(Image.open(img_path), width=100)
